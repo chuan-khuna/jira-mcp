@@ -68,6 +68,25 @@ class JiraClient:
             print(f"Error while filtering columns from Jira response: {e}")
             return None
 
+    def _process_time_columns(self, df: pd.DataFrame) -> pd.DataFrame:
+        time_cols = [
+            "timeestimate",
+            "aggregatetimeestimate",
+            "timeoriginalestimate",
+            "aggregatetimeoriginalestimate",
+            "timespent",
+            "aggregatetimespent",
+        ]
+
+        for col in time_cols:
+            df[col + '.hr'] = df[col] / 3600
+            df[col + '.days'] = df[col] / (3600 * 8)
+
+            df[col + '.hr'] = df[col + '.hr'].round(2)
+            df[col + '.days'] = df[col + '.days'].round(1)
+
+        return df
+
     def query_tasks(
         self, num_pages: int, page_size: int, days: int, task_types: list[str]
     ) -> pd.DataFrame:
@@ -83,4 +102,13 @@ class JiraClient:
                 break
 
         df = pd.concat(dfs, ignore_index=True)
+
+        df['created'] = pd.to_datetime(df['created'])
+        df['updated'] = pd.to_datetime(df['updated'])
+
+        df['created.date'] = df['created'].dt.date
+        df['updated.date'] = df['updated'].dt.date
+
+        df = self._process_time_columns(df)
+
         return df
