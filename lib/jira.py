@@ -38,6 +38,10 @@ class JiraClient:
     def set_query_params(
         self, task_types: list[str] | None = None, assignees: list[str] | None = None
     ):
+        """Set jql query parameters.
+
+        `None` means no filters.
+        """
         self.task_types = task_types
         self.assignees = assignees
 

@@ -38,9 +38,9 @@ def list_tasks_for_assignee(assignee: str, created_after: str, num_pages: int = 
         token=os.environ.get("JIRA_TOKEN", ""),
     )
 
-    df = client.query_tasks(
-        num_pages=num_pages, page_size=100, days=days, task_types=[], assignees=[assignee]
-    )
+    client.set_query_params(task_types=None, assignees=[assignee])
+
+    df = client.query_tasks(num_pages=num_pages, page_size=200, days=days)
     df = df[df['assignee.displayName'] == assignee].reset_index(drop=True)
     df = df[SHOW_COLUMNS]
 
@@ -48,4 +48,6 @@ def list_tasks_for_assignee(assignee: str, created_after: str, num_pages: int = 
 
 
 if __name__ == "__main__":
-    mcp.run(transport='stdio')
+    # mcp.run(transport='stdio')
+    mcp.run()
+
