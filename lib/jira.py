@@ -51,7 +51,7 @@ class JiraClient:
     ) -> None | pd.DataFrame:
         headers = {"Accept": "application/json"}
         query = {
-            'jql': self._build_jql_query_string(days, task_types),
+            'jql': self._build_jql_query_string(days, task_types, assignees),
             'startAt': skip,
             'maxResults': limit,
         }

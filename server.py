@@ -27,7 +27,7 @@ SHOW_COLUMNS = [
 
 
 @mcp.tool()
-def list_tasks_for_assignee(assignee: str, created_after: str) -> str:
+def list_tasks_for_assignee(assignee: str, created_after: str, num_pages: int = 10) -> str:
     today = datetime.date.today()
     created_after_date = datetime.datetime.strptime(created_after, "%Y-%m-%d").date()
     days = (today - created_after_date).days
@@ -39,7 +39,7 @@ def list_tasks_for_assignee(assignee: str, created_after: str) -> str:
     )
 
     df = client.query_tasks(
-        num_pages=10, page_size=100, days=days, task_types=[], assignees=[assignee]
+        num_pages=num_pages, page_size=100, days=days, task_types=[], assignees=[assignee]
     )
     df = df[df['assignee.displayName'] == assignee].reset_index(drop=True)
     df = df[SHOW_COLUMNS]
@@ -48,4 +48,4 @@ def list_tasks_for_assignee(assignee: str, created_after: str) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run()
+    mcp.run(transport='stdio')
