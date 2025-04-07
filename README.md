@@ -26,7 +26,6 @@ uv run mcp dev server.py
 example prompt
 
 ```txt
-
 Summarise tasks for `<assignee>` from `<date>`, limit pagination to 10 pages.
 
 Summarise it for resume
