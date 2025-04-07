@@ -32,15 +32,22 @@ class JiraClient:
             "summary",
         ]
 
-    def _build_jql_query_string(self, days: int, task_types: list[str]) -> str:
+    def _build_jql_query_string(
+        self, days: int, task_types: list[str] = [], assignees: list[str] = []
+    ) -> str:
         task_tuple = ', '.join(task_types)
         task_condition = f'AND issuetype in ({task_tuple})' if task_types else ''
 
-        jql_string = f'created >= -{days}d {task_condition} order by created DESC'
+        assignee_tuple = ', '.join(map(lambda x: f'"{x}"', assignees))
+        assignee_condition = f'AND assignee in ({assignee_tuple})' if assignees else ''
+
+        jql_string = (
+            f'created >= -{days}d {task_condition} {assignee_condition} order by created DESC'
+        )
         return jql_string
 
     def _paginated_query(
-        self, days: int, task_types: list[str], skip: int, limit: int
+        self, days: int, skip: int, limit: int, task_types: list[str], assignees: list[str]
     ) -> None | pd.DataFrame:
         headers = {"Accept": "application/json"}
         query = {
@@ -88,12 +95,14 @@ class JiraClient:
         return df
 
     def query_tasks(
-        self, num_pages: int, page_size: int, days: int, task_types: list[str]
+        self, num_pages: int, page_size: int, days: int, task_types: list[str], assignees: list[str]
     ) -> pd.DataFrame:
         dfs = []
         for page in tqdm(range(num_pages), desc="Fetching pages"):
             skip = page * page_size
-            df = self._paginated_query(days, task_types, skip=skip, limit=page_size)
+            df = self._paginated_query(
+                days, skip=skip, limit=page_size, task_types=task_types, assignees=assignees
+            )
 
             if df is not None:
                 dfs.append(df)

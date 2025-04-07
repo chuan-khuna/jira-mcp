@@ -38,7 +38,9 @@ def list_tasks_for_assignee(assignee: str, created_after: str) -> str:
         token=os.environ.get("JIRA_TOKEN", ""),
     )
 
-    df = client.query_tasks(num_pages=1, page_size=100, days=days, task_types=[])
+    df = client.query_tasks(
+        num_pages=10, page_size=100, days=days, task_types=[], assignees=[assignee]
+    )
     df = df[df['assignee.displayName'] == assignee].reset_index(drop=True)
     df = df[SHOW_COLUMNS]
 
