@@ -32,9 +32,20 @@ class JiraClient:
             "summary",
         ]
 
-    def _build_jql_query_string(
-        self, days: int, task_types: list[str] = [], assignees: list[str] = []
-    ) -> str:
+        self.task_types: list[str] | None = None
+        self.assignees: list[str] | None = None
+
+    def set_query_params(
+        self, task_types: list[str] | None = None, assignees: list[str] | None = None
+    ):
+        self.task_types = task_types
+        self.assignees = assignees
+
+    def _build_jql_query_string(self, days: int) -> str:
+
+        task_types = self.task_types if self.task_types is not None else []
+        assignees = self.assignees if self.assignees is not None else []
+
         task_tuple = ', '.join(task_types)
         task_condition = f'AND issuetype in ({task_tuple})' if task_types else ''
 
@@ -46,24 +57,19 @@ class JiraClient:
         )
         return jql_string
 
-    def _paginated_query(
-        self, days: int, skip: int, limit: int, task_types: list[str], assignees: list[str]
-    ) -> None | pd.DataFrame:
+    def _paginated_query(self, days: int, skip: int, limit: int) -> None | pd.DataFrame:
         headers = {"Accept": "application/json"}
-        query = {
-            'jql': self._build_jql_query_string(days, task_types, assignees),
-            'startAt': skip,
-            'maxResults': limit,
-        }
+        query = {'jql': self._build_jql_query_string(days), 'startAt': skip, 'maxResults': limit}
 
         response = requests.request(
-            "GET", self.url, headers=headers, params=query, auth=self.http_auth
+            "GET", self.url, headers=headers, params=query, auth=self.http_auth, timeout=5
         )
 
         data = json.loads(response.text)
         issues = data.get('issues', [])
 
         if len(issues) == 0:
+            print("[paginated query] No issues found")
             return None
 
         df = pd.DataFrame(issues)
@@ -72,7 +78,7 @@ class JiraClient:
         try:
             return df[self.filtered_columns]
         except KeyError as e:
-            print(f"Error while filtering columns from Jira response: {e}")
+            print(f"[paginated query] Error while filtering columns from Jira response: {e}")
             return None
 
     def _process_time_columns(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -94,15 +100,11 @@ class JiraClient:
 
         return df
 
-    def query_tasks(
-        self, num_pages: int, page_size: int, days: int, task_types: list[str], assignees: list[str]
-    ) -> pd.DataFrame:
+    def query_tasks(self, num_pages: int, page_size: int, days: int) -> pd.DataFrame:
         dfs = []
         for page in tqdm(range(num_pages), desc="Fetching pages"):
             skip = page * page_size
-            df = self._paginated_query(
-                days, skip=skip, limit=page_size, task_types=task_types, assignees=assignees
-            )
+            df = self._paginated_query(days, skip=skip, limit=page_size)
 
             if df is not None:
                 dfs.append(df)
