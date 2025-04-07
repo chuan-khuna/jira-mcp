@@ -43,3 +43,7 @@ def list_tasks_for_assignee(assignee: str, created_after: str) -> str:
     df = df[SHOW_COLUMNS]
 
     return df.to_markdown()
+
+
+if __name__ == "__main__":
+    mcp.run()
