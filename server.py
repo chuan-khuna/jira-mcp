@@ -30,6 +30,12 @@ TMP_DIR = "tmp_data"
 os.makedirs(TMP_DIR, exist_ok=True)
 
 
+def format_result(df):
+    # return df.to_markdown()
+    # return df.to_json(orient="records")
+    return df['summary'].to_list()
+
+
 @mcp.tool()
 def list_tasks_for_assignee(assignee: str, created_after: str, num_pages: int = 10) -> str:
     today = datetime.date.today()
@@ -45,26 +51,21 @@ def list_tasks_for_assignee(assignee: str, created_after: str, num_pages: int = 
     if os.path.exists(file_path):
         print(f"File already exists: {file_path}")
         df = pd.read_csv(file_path)
-        df = df[df['assignee.displayName'] == assignee].reset_index(drop=True)
-        df = df[SHOW_COLUMNS]
-        return df.to_markdown()
+    else:
+        client = JiraClient(
+            url=os.environ.get("JIRA_URL", ""),
+            email=os.environ.get("JIRA_EMAIL", ""),
+            token=os.environ.get("JIRA_TOKEN", ""),
+        )
 
-    client = JiraClient(
-        url=os.environ.get("JIRA_URL", ""),
-        email=os.environ.get("JIRA_EMAIL", ""),
-        token=os.environ.get("JIRA_TOKEN", ""),
-    )
+        client.set_query_params(task_types=None, assignees=[assignee])
+        df = client.query_tasks(num_pages=num_pages, page_size=200, days=days)
+        df.to_csv(file_path, index=False)
+        print(f"Saved to {file_path}")
 
-    client.set_query_params(task_types=None, assignees=[assignee])
-
-    df = client.query_tasks(num_pages=num_pages, page_size=200, days=days)
-    df = df[df['assignee.displayName'] == assignee].reset_index(drop=True)
+    # df = df[df['assignee.displayName'] == assignee].reset_index(drop=True)
     df = df[SHOW_COLUMNS]
-
-    df.to_csv(file_path, index=False)
-    print(f"Saved to {file_path}")
-
-    return df.to_markdown()
+    return format_result(df)
 
 
 if __name__ == "__main__":
