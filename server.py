@@ -26,11 +26,28 @@ SHOW_COLUMNS = [
 ]
 
 
+TMP_DIR = "tmp_data"
+os.makedirs(TMP_DIR, exist_ok=True)
+
+
 @mcp.tool()
 def list_tasks_for_assignee(assignee: str, created_after: str, num_pages: int = 10) -> str:
     today = datetime.date.today()
     created_after_date = datetime.datetime.strptime(created_after, "%Y-%m-%d").date()
     days = (today - created_after_date).days
+
+    file_path = os.path.join(
+        TMP_DIR, f"{today.strftime("%Y%m%d")}_jira_tasks_{assignee}_created_{created_after}.csv"
+    )
+
+    # load data from temporary file if it exists
+    # TODO: fix mcp tool bug in claude, but not cursor?
+    if os.path.exists(file_path):
+        print(f"File already exists: {file_path}")
+        df = pd.read_csv(file_path)
+        df = df[df['assignee.displayName'] == assignee].reset_index(drop=True)
+        df = df[SHOW_COLUMNS]
+        return df.to_markdown()
 
     client = JiraClient(
         url=os.environ.get("JIRA_URL", ""),
@@ -44,10 +61,12 @@ def list_tasks_for_assignee(assignee: str, created_after: str, num_pages: int = 
     df = df[df['assignee.displayName'] == assignee].reset_index(drop=True)
     df = df[SHOW_COLUMNS]
 
+    df.to_csv(file_path, index=False)
+    print(f"Saved to {file_path}")
+
     return df.to_markdown()
 
 
 if __name__ == "__main__":
     # mcp.run(transport='stdio')
     mcp.run()
-
