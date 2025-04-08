@@ -30,14 +30,16 @@ TMP_DIR = "tmp_data"
 os.makedirs(TMP_DIR, exist_ok=True)
 
 
-def format_result(df):
+def format_result(df) -> str | list[str] | list[dict]:
     # return df.to_markdown()
     # return df.to_json(orient="records")
     return df['summary'].to_list()
 
 
 @mcp.tool()
-def list_tasks_for_assignee(assignee: str, created_after: str, num_pages: int = 10) -> str:
+def list_tasks_for_assignee(
+    assignee: str, created_after: str, num_pages: int = 10
+) -> str | list[str] | list[dict]:
     today = datetime.date.today()
     created_after_date = datetime.datetime.strptime(created_after, "%Y-%m-%d").date()
     days = (today - created_after_date).days
