@@ -61,7 +61,8 @@ def list_tasks_for_assignee(
         )
 
         client.set_query_params(task_types=None, assignees=[assignee])
-        df = client.query_tasks(num_pages=num_pages, page_size=200, days=days)
+        # TODO: why page size cannot be more than 100, check jira limit?
+        df = client.query_tasks(num_pages=num_pages, page_size=100, days=days)
         df.to_csv(file_path, index=False)
         print(f"Saved to {file_path}")
 
