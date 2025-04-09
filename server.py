@@ -31,9 +31,9 @@ os.makedirs(TMP_DIR, exist_ok=True)
 
 
 def format_result(df) -> str | list[str] | list[dict]:
-    # return df.to_markdown()
+    return df.to_markdown()
     # return df.to_json(orient="records")
-    return df['summary'].to_list()
+    # return df['summary'].to_list()
 
 
 @mcp.tool()
